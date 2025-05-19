@@ -11,12 +11,11 @@
 
   <script>
     async function updateTicker() {
+      const token = prompt("Enter your GitHub token:");
       const text = document.getElementById('tickerText').value;
-      const token = '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';
 
-
-      // Step 1: Get current SHA
-      const getRes = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+      // First: Get the current SHA of the file
+      const response = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
         method: 'GET',
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -24,17 +23,18 @@
         }
       });
 
-      if (!getRes.ok) {
-        alert('Failed to load current file version');
+      if (!response.ok) {
+        alert("Failed to fetch file info: " + response.status);
         return;
       }
 
-      const data = await getRes.json();
+      const data = await response.json();
 
+      // Base64 encode the updated content
       const updatedContent = btoa(JSON.stringify({ text }));
 
-      // Step 2: PUT updated content
-      const putRes = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+      // Second: PUT to update the file
+      const updateResponse = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
         method: 'PUT',
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -47,10 +47,10 @@
         })
       });
 
-      if (putRes.ok) {
-        alert('Ticker updated!');
+      if (!updateResponse.ok) {
+        alert("Update failed: " + updateResponse.status);
       } else {
-        alert('Update failed');
+        alert('Ticker updated successfully!');
       }
     }
   </script>
