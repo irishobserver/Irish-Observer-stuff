@@ -6,68 +6,51 @@
 </head>
 <body>
   <h1>Update Ticker</h1>
-  
-  <label for="token">GitHub PAT:</label><br>
-  <input type="password" id="token" placeholder="Paste your token here" style="width:60%"><br><br>
-
-  <label for="tickerText">Ticker Text:</label><br>
-  <textarea id="tickerText" rows="4" cols="50" placeholder="Enter new ticker message here..."></textarea><br><br>
-
+  <textarea id="tickerText" rows="4" cols="50"></textarea><br>
   <button onclick="updateTicker()">Update</button>
 
   <script>
     async function updateTicker() {
-      const token = document.getElementById('token').value.trim();
-      const text = document.getElementById('tickerText').value.trim();
+      const text = document.getElementById('tickerText').value;
+      const token = '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';
 
-      if (!token || !text) {
-        alert("Please enter both a token and ticker text.");
+
+      // Step 1: Get current SHA
+      const getRes = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${token}`
+        }
+      });
+
+      if (!getRes.ok) {
+        alert('Failed to load current file version');
         return;
       }
 
-      const url = 'https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json';
+      const data = await getRes.json();
 
-      try {
-        // Step 1: Fetch current file to get SHA
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
+      const updatedContent = btoa(JSON.stringify({ text }));
 
-        if (!res.ok) {
-          throw new Error(`GitHub API GET failed: ${res.status}`);
-        }
+      // Step 2: PUT updated content
+      const putRes = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${token}`
+        },
+        body: JSON.stringify({
+          message: 'Update ticker text',
+          content: updatedContent,
+          sha: data.sha
+        })
+      });
 
-        const fileData = await res.json();
-
-        // Step 2: Update content with new text
-        const updatedContent = btoa(JSON.stringify({ text }));
-
-        const updateRes = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            message: 'Update ticker text',
-            content: updatedContent,
-            sha: fileData.sha
-          })
-        });
-
-        if (!updateRes.ok) {
-          const errText = await updateRes.text();
-          throw new Error(`PUT failed: ${updateRes.status} — ${errText}`);
-        }
-
-        alert('✅ Ticker updated successfully!');
-      } catch (error) {
-        console.error(error);
-        alert(`❌ Failed to update ticker: ${error.message}`);
+      if (putRes.ok) {
+        alert('Ticker updated!');
+      } else {
+        alert('Update failed');
       }
     }
   </script>
