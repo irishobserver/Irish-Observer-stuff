@@ -2,63 +2,48 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>News Editor (GitHub-only)</title>
-  <style>
-    body { background:#111; color:#fff; font-family:sans-serif; padding:20px; }
-    input, button { font-size:1rem; padding:8px; }
-  </style>
+  <title>News Editor</title>
 </head>
 <body>
-  <h1>🖋️ Ticker Editor</h1>
-  <p>
-    <input id="token" type="password" placeholder="GitHub PAT" style="width:60%">
-  </p>
-  <p>
-    <input id="text" type="text" placeholder="New ticker text" style="width:80%">
-    <button onclick="update()">Update</button>
-  </p>
+  <h1>Update Ticker</h1>
+  <textarea id="tickerText" rows="4" cols="50"></textarea><br>
+  <button onclick="updateTicker()">Update</button>
+
   <script>
-    const OWNER = 'YOUR_GITHUB_USERNAME';
-    const REPO  = 'YOUR_REPO_NAME';
-    const PATH  = 'ticker.json';  // file in your repo
+    async function updateTicker() {
+      const text = document.getElementById('tickerText').value;
 
-    async function update() {
-      const token = document.getElementById('token').value.trim();
-      const text  = document.getElementById('text').value.trim();
-      if (!token || !text) return alert('Token + text required');
-
-      // 1) Get current file SHA
-      let r = await fetch(
-        `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
-          headers:{ Authorization:`token ${token}` }
+      const response = await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': 'token YOUR_PERSONAL_ACCESS_TOKEN'
         }
-      );
-      if (!r.ok) return alert('Failed to fetch file info');
-      let info = await r.json();
+      });
 
-      // 2) Create new content blob
-      const newContent = btoa(JSON.stringify({ text }));
-      // 3) PUT it back
-      r = await fetch(
-        `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
-          method:'PUT',
-          headers:{
-            Authorization:`token ${token}`,
-            'Content-Type':'application/json'
-          },
-          body: JSON.stringify({
-            message: `Update ticker: "${text}"`,
-            content: newContent,
-            sha: info.sha
-          })
-        }
-      );
-      if (r.ok) {
-        alert('✅ Ticker updated!');
-      } else {
-        alert('❌ Update failed');
-        console.error(await r.json());
-      }
+      const data = await response.json();
+
+      const updatedContent = btoa(JSON.stringify({ text }));
+
+      await fetch('https://api.github.com/repos/irishobserver/Irish-Observer-stuff/contents/ticker.json', {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': 'token YOUR_PERSONAL_ACCESS_TOKEN'
+        },
+        body: JSON.stringify({
+          message: 'Update ticker text',
+          content: updatedContent,
+          sha: data.sha
+        })
+      });
+
+      alert('Ticker updated!');
+    }
+  </script>
+</body>
+</html>
+
     }
   </script>
 </body>
